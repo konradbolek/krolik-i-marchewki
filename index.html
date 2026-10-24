@@ -13,10 +13,12 @@
 .mob{display:none}body.touch .mob{display:block}body.touch .desk{display:none}body.touch span.mob{display:inline}body.touch .gest{display:flex}
 .gest{display:flex;justify-content:center;gap:10px;margin:6px 0}.gest div{background:#ffe8cc;border-radius:14px;padding:4px 8px;font-size:13px;line-height:1.2}.gest b{font-size:24px;display:block}
 @media (orientation:portrait){#ov{bottom:calc(96px + env(safe-area-inset-bottom));min-width:0;width:88vw;padding:4px 10px}#hud{font-size:clamp(15px,4.4vw,22px)}#pw{top:calc(96px + env(safe-area-inset-top))}#msg{font-size:5.2vw;top:20%}}
+#ov{max-height:calc(100% - 140px);overflow-y:auto;touch-action:pan-y}.lb{margin:4px auto;border-collapse:collapse;font-size:clamp(13px,3.6vw,16px)}.lb td{padding:3px 6px;border-bottom:1px solid #ffd8a8;text-align:right}.lb td.nm{text-align:left;font-weight:bold;max-width:40vw;overflow:hidden}.lb tr.me{background:#ffe066;animation:bl 1s 3}.lb tr.mine td.nm{color:#e8590c}@keyframes bl{50%{background:#fff3bf}}
+.ub{font:inherit;font-weight:bold;font-size:16px;border:0;border-radius:14px;padding:10px 16px;background:#ff922b;color:#fff;box-shadow:0 3px 0 #d9480f;min-height:44px;cursor:pointer}.go2{background:#40c057;box-shadow:0 3px 0 #2b8a3e}#nm{font:inherit;font-size:18px;padding:9px;border:3px solid #ff922b;border-radius:12px;width:min(52vw,200px)}.err{color:#c92a2a}
 </style></head><body>
 <div id="hud"><div><div class="pill" id="car">🥕 0</div><br><div class="pill" id="etap">Wiosenna łąka</div></div><div style="text-align:center"><div class="pill" id="pts">0</div></div><div style="text-align:right"><span class="pill" id="rek">🏆 0</span></div></div>
 <div id="mute" class="btn">🔊</div><div id="pzbtn" class="btn">⏸</div><div id="pz">⏸ Pauza<small>Dotknij ekranu, aby grać dalej</small></div><div id="pw"></div><div id="msg"></div>
-<div id="ov"><h1>🐰 Królik i marchewki 3D</h1><p class="desk">← → zmiana ścieżki &nbsp; ↑ / spacja skok &nbsp; ↓ wślizg</p><div class="gest mob"><div><b>👆⬅️➡️</b>pas</div><div><b>👆⬆️</b>skok</div><div><b>👆⬇️</b>wślizg</div></div><p>Zbieraj marchewki, skacz po wozach, łap 🧲 magnes, 👟 sprężynki i ✖2!</p><p class="go"><span class="desk">Naciśnij SPACJĘ</span><span class="mob">Dotknij ekranu</span>, aby biec!</p></div>
+<div id="ov"><h1>🐰 Królik i marchewki 3D</h1><p class="desk">← → zmiana ścieżki &nbsp; ↑ / spacja skok &nbsp; ↓ wślizg</p><div class="gest mob"><div><b>👆⬅️➡️</b>pas</div><div><b>👆⬆️</b>skok</div><div><b>👆⬇️</b>wślizg</div></div><p>Zbieraj marchewki, skacz po wozach, łap 🧲 magnes, 👟 sprężynki i ✖2!</p><p class="go"><span class="desk">Naciśnij SPACJĘ</span><span class="mob">Dotknij ekranu</span>, aby biec!</p><p><button class="ub ui" id="rkbtn">🏆 Ranking</button></p></div>
 <script>/**
  * @license
  * Copyright 2010-2023 Three.js Authors
@@ -195,9 +197,27 @@ let best=+localStorage.getItem('krolik3d_rekord')||0;const act=[];
 function msg(t,d){const m=$('msg');m.textContent=t;m.style.display='block';msgT=d||2}
 function clearAll(){for(const k in P)for(const o of P[k])o.visible=false;for(const c of carrots)c.visible=false;for(const p of powers)p.visible=false;act.length=0}
 function reset(){clearAll();lane=1;bx=0;by=0;vy=0;dist=0;bz=0;v=12;tm=0;score=0;nCar=0;slideT=0;onAir=false;nextZ=-45;busy=[1e9,1e9,1e9];mag=boots=mult=0;stI=0;lastStage=0;bun.rotation.set(0,0,0);body.scale.set(1,1,1);$('etap').textContent=STG[0].n}
-function start(){reset();state='play';$('ov').style.display='none';msg('🌼 Świat 1: '+STG[0].n,2);SFX.stage()}
+function start(){reset();state='play';$('ov').style.display='none';$('ov').classList.remove('ui');msg('🌼 Świat 1: '+STG[0].n,2);SFX.stage()}
 function gameOver(){state='crash';try{navigator.vibrate&&navigator.vibrate([90,40,140])}catch(e){}crashT=0;SFX.crash();burst(bx,by+1,bz,[0xffffff,0xffe066,0xff8787],14);const s=Math.floor(score);if(s>best){best=s;localStorage.setItem('krolik3d_rekord',best)}}
-function showOver(){state='over';const s=Math.floor(score);$('ov').innerHTML='<h1>Ojej! Koniec biegu 🐰</h1><p>Punkty: <b>'+s+'</b> &nbsp; 🥕 Marchewki: <b>'+nCar+'</b> &nbsp; Dystans: <b>'+Math.floor(dist)+' m</b></p><p>Dotarłeś do świata: <b>'+STG[stI].i+' '+STG[stI].n+'</b></p><p>🏆 Rekord: <b>'+best+'</b>'+(s>=best&&s>0?' – nowy rekord! 🎉':'')+'</p><p class="go">SPACJA lub dotknij ekranu – biegniemy jeszcze raz!</p>';$('ov').style.display='block'}
+const LB='https://textdb.dev/api/data/krolik-lb-b6f00132-1f1c-4427-baf5-5a018ab15db9';let lbName=localStorage.getItem('krolik3d_imie')||'',myId=localStorage.getItem('krolik3d_id')||Math.random().toString(36).slice(2,10),lastSent=null;localStorage.setItem('krolik3d_id',myId);
+const BAD=['kurw','chuj','huj','pizd','jeb','pierd','cip','fiut','dup','szmat','suk','fuck','shit','dick','cunt','bitch'];
+function cleanName(n){n=(n||'').replace(/[<>&"'`\\|]/g,'').replace(/\s+/g,' ').trim().slice(0,12);const f=n.toLowerCase().replace(/0/g,'o').replace(/1/g,'i').replace(/3/g,'e').replace(/4/g,'a').replace(/[^a-ząćęłńóśźż]/g,'');return BAD.some(b=>f.includes(b))?'':n}
+function validRes(r){return r&&typeof r.n==='string'&&r.n.length>0&&r.n.length<=12&&Number.isInteger(r.s)&&r.s>0&&r.s<=400000&&Number.isInteger(r.c)&&r.c>=0&&r.c<=20000&&Number.isInteger(r.d)&&r.d>=0&&r.d<=400000&&r.s<=r.d*1.1+r.c*22+60&&Number.isInteger(r.w)&&r.w>=0&&r.w<STG.length}
+function esc(t){return String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';')}
+async function lbGet(){const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),7000);try{const r=await fetch(LB+'?t='+Date.now(),{signal:ctl.signal,cache:'no-store'});if(!r.ok)throw 0;let a;try{a=JSON.parse(await r.text())}catch(e){a=[]}return(Array.isArray(a)?a:[]).filter(validRes).sort((x,y)=>y.s-x.s)}finally{clearTimeout(to)}}
+async function lbSend(res){const a=await lbGet();a.push(res);a.sort((x,y)=>y.s-x.s);const top=a.slice(0,50);const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),7000);try{const r=await fetch(LB,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(top),signal:ctl.signal});if(!r.ok)throw 0}finally{clearTimeout(to)}return top}
+function lbTable(a,hl){if(!a.length)return '<p>Jeszcze nikt nie zapisał wyniku – bądź pierwszy! 🥇</p>';return '<table class="lb">'+a.slice(0,10).map((r,i)=>'<tr class="'+(hl&&r.id===hl.id&&r.t===hl.t?'me':r.id===myId?'mine':'')+'"><td>'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+'</td><td class="nm">'+esc(r.n)+'</td><td>'+r.s+'</td><td>🥕'+r.c+'</td><td>'+(STG[r.w]?STG[r.w].i:'')+'</td></tr>').join('')+'</table>'}
+async function showLB(box,hl){box.innerHTML='<p>⏳ Wczytuję ranking…</p>';try{box.innerHTML=lbTable(await lbGet(),hl)}catch(e){box.innerHTML='<p class="err">📡 Brak połączenia z rankingiem. Twój rekord na tym urządzeniu: <b>'+best+'</b></p>'}}
+function showRanking(){const ov=$('ov');ov._menu=ov._menu||ov.innerHTML;ov.innerHTML='<h1>🏆 Ranking TOP 10</h1><div id="lbbox"></div><p><button class="ub" id="bk">⬅ Wróć</button></p>';ov.classList.add('ui');$('bk').onclick=()=>{ov.innerHTML=ov._menu;ov.classList.remove('ui');bindMenu()};showLB($('lbbox'))}
+function bindMenu(){const b=$('rkbtn');if(b)b.onclick=e=>{e.stopPropagation();showRanking()}}
+function showOver(){state='over';const s=Math.floor(score),res={n:'',s,c:nCar,d:Math.floor(dist),w:stI,id:myId,t:Date.now()};const ok=validRes({...res,n:'x'});const ov=$('ov');ov.classList.add('ui');
+ ov.innerHTML='<h1>Ojej! Koniec biegu 🐰</h1><p>Punkty: <b>'+s+'</b> &nbsp; 🥕 <b>'+nCar+'</b> &nbsp; Dystans: <b>'+Math.floor(dist)+' m</b> &nbsp; '+STG[stI].i+' '+STG[stI].n+'</p><p>🏆 Twój rekord: <b>'+best+'</b>'+(s>=best&&s>0?' – nowy rekord! 🎉':'')+'</p>'+
+ (ok?'<div id="nmf"><p><b>Wpisz swoje imię:</b></p><p><input id="nm" maxlength="12" autocomplete="nickname" enterkeyhint="send" placeholder="Imię (max 12)"> <button class="ub" id="snd">Zapisz wynik</button></p><p id="nmerr" class="err"></p></div>':'')+
+ '<div id="lbbox"></div><p><button class="ub go2" id="again">▶ Zagraj jeszcze raz</button></p>';ov.style.display='block';
+ const nm=$('nm');if(nm){nm.value=lbName;const send=async()=>{const n=cleanName(nm.value);if(!n){$('nmerr').textContent='Wpisz ładne imię (1–12 znaków) 🙂';return}lbName=n;localStorage.setItem('krolik3d_imie',n);res.n=n;$('snd').disabled=true;$('nmerr').textContent='⏳ Wysyłam…';
+  try{const top=await lbSend(res);lastSent=res;$('nmf').innerHTML='<p>✅ Wynik zapisany, '+esc(n)+'!</p>';$('lbbox').innerHTML='<p><b>🏆 TOP 10</b></p>'+lbTable(top,res)}catch(e){$('snd').disabled=false;$('nmerr').textContent='📡 Nie udało się wysłać (brak internetu?). Rekord lokalny zapisany – spróbuj ponownie.'}};
+  $('snd').onclick=send;nm.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')send()})}
+ $('again').onclick=e=>{e.stopPropagation();act_('start')};showLB($('lbbox'))}
 // ---------- GENERATOR ----------
 function place(type,l,z,extra){const o=take(P[type]);if(!o)return null;o.position.set((l-1)*LANE,0,z);o.userData.l=l;o.userData.vz=0;o.rotation.y=0;if(type==='cart'){o.userData.hasRamp=extra;o.userData.ramp.visible=extra}style(o,wAt(z));act.push(o);return o}
 function carrotAt(x,y,z){const c=take(carrots);if(!c)return;c.position.set(x,y,z);c.userData.y0=y;c.userData.m=false}
@@ -224,12 +244,12 @@ function genRow(z){if(dist>90&&!busy.some(b=>b<1e8)){const r=Math.random();if(r<
 function act_(k){if(state==='menu'||state==='over'){if(k==='up'||k==='start')start();return}if(state!=='play')return;
  if(k==='left'&&lane>0){lane--;snd(600,.06,'sine',.06,400)}else if(k==='right'&&lane<2){lane++;snd(600,.06,'sine',.06,400)}
  else if(k==='up'&&!onAir){vy=boots>0?15:10.6;onAir=true;slideT=0;SFX.jump()}else if(k==='down'){if(onAir)vy=-22;slideT=.75;SFX.slide()}}
-addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',Space:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyW:'up',KeyS:'down',Enter:'start'}[e.code];if(m){e.preventDefault();if(!e.repeat)act_(m)}else if(e.code==='KeyM')$('mute').dispatchEvent(new Event('pointerdown'))});
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',Space:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyW:'up',KeyS:'down',Enter:'start'}[e.code];if(m){e.preventDefault();if(!e.repeat)act_(m)}else if(e.code==='KeyM')$('mute').dispatchEvent(new Event('pointerdown'))});
 // dotyk w stylu Subway Surfers: swipe wykrywany w touchmove
 const TH=30;let tid=null,tx=0,ty=0,tt=0,used=false,lastTap=0,nSw=0,fsTried=false;
 function goFS(){if(fsTried)return;fsTried=true;const d=document.documentElement;try{const r=(d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d,{navigationUI:'hide'});if(r&&r.then)r.then(lockO,()=>{});else lockO()}catch(e){}}
 function lockO(){try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{})}catch(e){}}
-function ui(e){return e.target.closest&&e.target.closest('.btn')}
+function ui(e){return e.target.closest&&e.target.closest('.btn,.ui')}
 addEventListener('touchstart',e=>{if(ui(e))return;e.preventDefault();goFS();const t=e.changedTouches[0];
  if(state==='menu'||state==='over'){act_('start');tid=null;return}
  if(state==='pause'){setPause(false);tid=null;return}
@@ -312,7 +332,7 @@ function update(dt){tm+=dt;
  let pw='';if(mag>0)pw+='<div>🧲 Magnes '+Math.ceil(mag)+' s</div>';if(boots>0)pw+='<div>👟 Super skoki '+Math.ceil(boots)+' s</div>';if(mult>0)pw+='<div>✖2 Punkty '+Math.ceil(mult)+' s</div>';if(state==='play'&&STG[stI].space)pw+='<div>🪐 Niska grawitacja</div>';const pe=$('pw');if(pe._h!==pw){pe.innerHTML=pw;pe._h=pw}}
 applyStage(0);$('etap').textContent=STG[0].i+' '+STG[0].n;
 function loop(now){const dt=Math.min(.05,(now-last)/1000)*TS;last=now;update(dt);ren.render(scene,cam);requestAnimationFrame(loop)}requestAnimationFrame(loop);
-let TS=1;window.__dbg={set ts(v){TS=v},get st(){return{state,dist:Math.round(dist),score:Math.round(score),nCar,by:+by.toFixed(2),lane,onAir,stI,gr,act:act.map(o=>o.userData.t).join(',')}},key:act_,set god(g){god=g},get nSw(){return nSw},get slide(){return slideT},pause:setPause,get cam(){return{fov:cam.fov,aspect:+cam.aspect.toFixed(2)}},
+let TS=1;bindMenu();window.__dbg={lbGet,lbSend,cleanName,validRes,set score(v){score=v},set dist(v){dist=v},set ts(v){TS=v},get st(){return{state,dist:Math.round(dist),score:Math.round(score),nCar,by:+by.toFixed(2),lane,onAir,stI,gr,act:act.map(o=>o.userData.t).join(',')}},key:act_,set god(g){god=g},get nSw(){return nSw},get slide(){return slideT},pause:setPause,get cam(){return{fov:cam.fov,aspect:+cam.aspect.toFixed(2)}},
  jumpTo(d){dist=d;bz=-d;nextZ=bz-30;clearAll();tm=Math.max(tm,(d/30))},power(k){if(k==0)mag=10;else if(k==1)boots=10;else mult=10},
  spawn(k,dz,x){const o=place(k,1,bz-dz);if(!o)return;const u=o.userData;if(k==='hog'){u.dir=1;u.sp=1.3;o.position.x=x||0}else{u.ph=x||0;u.seq=[-3.3,-1.1,1.1,3.3,1.1,-1.1]}},clear:clearAll,ren,scene,cam};
 };
